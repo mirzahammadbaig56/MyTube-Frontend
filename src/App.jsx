@@ -1,18 +1,15 @@
-import { useContext } from "react";
-import { AuthContext } from "./context/AuthContext.jsx";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
 
 function App() {
-  const { user, loading } = useContext(AuthContext);
-
-  if (loading) {
-    return <h1>Loading...</h1>;
-  }
-
   return (
-    <div>
-      <h1>Auth Test</h1>
-      <p>{user ? `Logged in as: ${user.username}` : "Not logged in"}</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<h1>Home Page</h1>} />
+        <Route path="/login" element= <LoginPage/> />
+        <Route path="/register" element={<h1>Register Page</h1>} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
