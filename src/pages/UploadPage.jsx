@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 
 function UploadPage() {
@@ -44,6 +45,7 @@ function UploadPage() {
       });
 
       const newVideoId = response.data.data._id;
+      toast.success("Video uploaded successfully!");
       navigate(`/videos/${newVideoId}`); // straight to the freshly uploaded video
     } catch (err) {
       const backendErrors = err.response?.data?.errors;

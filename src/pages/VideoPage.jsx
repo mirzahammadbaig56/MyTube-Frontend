@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import { getVideoById } from "../api/VideoApi";
 import { getVideoComments, addComment } from "../api/commentApi";
 import { AuthContext } from "../context/AuthContext";
@@ -35,7 +36,7 @@ function VideoPage() {
         setLoading(false);
       }
     })();
-  }, [videoId, fetchComments]);
+  }, [videoId, fetchComments]); // re-run whenever the user navigates to a different video
 
   const handleAddComment = async (e) => {
     e.preventDefault();
@@ -45,9 +46,9 @@ function VideoPage() {
     try {
       await addComment(videoId, newComment);
       setNewComment("");
-      await fetchComments();
+      await fetchComments(); // refresh the list to show the new comment
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to add comment");
+      toast.error(err.response?.data?.message || "Failed to add comment");
     } finally {
       setIsCommenting(false);
     }
