@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getVideoById } from "../api/VideoApi";
 import { getVideoComments, addComment } from "../api/commentApi";
+import { getChannelProfile } from "../api/userApi";
+import { toggleSubscription } from "../api/subscriptionApi";
 import { AuthContext } from "../context/AuthContext";
 
 function VideoPage() {
@@ -11,11 +13,13 @@ function VideoPage() {
 
   const [video, setVideo] = useState(null);
   const [comments, setComments] = useState([]);
+  const [channel, setChannel] = useState(null); // { isSubscribed, subscribersCount, ... }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [newComment, setNewComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   const fetchComments = useCallback(async () => {
     const response = await getVideoComments(videoId);
@@ -28,7 +32,15 @@ function VideoPage() {
       setError("");
       try {
         const videoResponse = await getVideoById(videoId);
-        setVideo(videoResponse.data.data);
+        const videoData = videoResponse.data.data;
+        setVideo(videoData);
+
+        // Fetch the channel's subscriber info using the video owner's username
+        const channelResponse = await getChannelProfile(
+          videoData.owner.username,
+        );
+        setChannel(channelResponse.data.data);
+
         await fetchComments();
       } catch {
         setError("Failed to load this video.");
@@ -54,6 +66,34 @@ function VideoPage() {
     }
   };
 
+  const handleToggleSubscribe = async () => {
+    if (!user) {
+      toast.error("Please log in to subscribe.");
+      return;
+    }
+
+    setIsSubscribing(true);
+    try {
+      await toggleSubscription(video.owner._id);
+
+      // Functional update — depends on the previous value of "channel",
+      // so we use the (prev) => {...} form instead of reading "channel" directly.
+      setChannel((prev) => ({
+        ...prev,
+        isSubscribed: !prev.isSubscribed,
+        subscribersCount: prev.isSubscribed
+          ? prev.subscribersCount - 1
+          : prev.subscribersCount + 1,
+      }));
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message || "Failed to update subscription",
+      );
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -70,6 +110,9 @@ function VideoPage() {
     );
   }
 
+  // Don't show the subscribe button on your own video
+  const isOwnVideo = user && user._id === video.owner._id;
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
       {/* Video player */}
@@ -80,19 +123,37 @@ function VideoPage() {
       {/* Title */}
       <h1 className="text-xl font-bold text-neutral-900 mb-2">{video.title}</h1>
 
-      {/* Owner + views */}
-      <div className="flex items-center gap-3 mb-4 pb-4 border-b border-neutral-200">
-        <img
-          src={video.owner?.avatar?.url}
-          alt={video.owner?.username}
-          className="w-10 h-10 rounded-full object-cover shrink-0"
-        />
-        <div>
-          <p className="text-sm font-semibold text-neutral-900">
-            {video.owner?.username}
-          </p>
-          <p className="text-xs text-neutral-500">{video.views} views</p>
+      {/* Owner + subscribe button + views */}
+      <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-neutral-200">
+        <div className="flex items-center gap-3">
+          <img
+            src={video.owner?.avatar?.url}
+            alt={video.owner?.username}
+            className="w-10 h-10 rounded-full object-cover shrink-0"
+          />
+          <div>
+            <p className="text-sm font-semibold text-neutral-900">
+              {video.owner?.username}
+            </p>
+            <p className="text-xs text-neutral-500">
+              {channel?.subscribersCount ?? 0} subscribers
+            </p>
+          </div>
         </div>
+
+        {!isOwnVideo && (
+          <button
+            onClick={handleToggleSubscribe}
+            disabled={isSubscribing}
+            className={`text-sm font-semibold px-5 py-2 rounded-full cursor-pointer transition disabled:opacity-50 ${
+              channel?.isSubscribed
+                ? "bg-neutral-200 text-neutral-700 hover:bg-neutral-300"
+                : "bg-red-600 text-white hover:bg-red-700"
+            }`}
+          >
+            {channel?.isSubscribed ? "Subscribed" : "Subscribe"}
+          </button>
+        )}
       </div>
 
       {/* Description */}
@@ -100,13 +161,15 @@ function VideoPage() {
         {video.description}
       </p>
 
+      {/* Views (moved here to keep the owner row focused on identity + subscribe) */}
+      <p className="text-xs text-neutral-500 -mt-6 mb-8">{video.views} views</p>
+
       {/* Comments section */}
       <div>
         <h2 className="text-lg font-semibold text-neutral-900 mb-4">
           {comments.length} Comments
         </h2>
 
-        {/* Add comment form — only shown if logged in */}
         {user ? (
           <form onSubmit={handleAddComment} className="flex gap-3 mb-6">
             <img
@@ -148,7 +211,6 @@ function VideoPage() {
           </p>
         )}
 
-        {/* Comments list */}
         <div className="flex flex-col gap-4">
           {comments.length === 0 ? (
             <p className="text-sm text-neutral-500">
