@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getAllVideos } from "../api/VideoApi.js";
 
-// A single video card — kept in the same file for now since it's small.
-// Can be split into components/VideoCard.jsx later if it grows.
 function VideoCard({ video }) {
   return (
     <Link
