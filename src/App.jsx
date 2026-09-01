@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import VideoPage from "./pages/VideoPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UploadPage from "./pages/UploadPage";
+import ChannelPage from "./pages/ChannelPage";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/c/:username" element={<ChannelPage />} /> 
       </Routes>
     </BrowserRouter>
   );
