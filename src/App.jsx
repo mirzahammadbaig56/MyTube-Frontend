@@ -4,6 +4,8 @@ import RegisterPage from "./pages/RegisterPage";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import VideoPage from "./pages/VideoPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import UploadPage from "./pages/UploadPage";
 
 function App() {
   return (
@@ -14,6 +16,14 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/videos/:videoId" element={<VideoPage />} />
+        <Route
+          path="/upload"
+          element={
+            <ProtectedRoute>
+              <UploadPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
