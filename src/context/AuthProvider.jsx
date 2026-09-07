@@ -1,10 +1,23 @@
-import { useState, useEffect } from "react";
-import { AuthContext } from "./AuthContext.jsx";
+import { useState, useEffect, useCallback } from "react";
 import { loginUser, logoutUser, getCurrentUser } from "../api/authApi";
+import { AuthContext } from "./AuthContext";
+
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Re-fetches the current user — used after profile updates (avatar,
+  // account details, etc.) so the whole app (Navbar, etc.) reflects the change
+  // without needing a full page reload.
+  const refreshUser = useCallback(async () => {
+    try {
+      const response = await getCurrentUser();
+      setUser(response.data.data);
+    } catch {
+      setUser(null);
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -30,7 +43,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
