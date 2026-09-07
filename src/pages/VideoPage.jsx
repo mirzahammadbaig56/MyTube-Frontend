@@ -1,8 +1,17 @@
 import { useState, useEffect, useContext, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getVideoById } from "../api/VideoApi";
-import { getVideoComments, addComment } from "../api/commentApi";
+import {
+  getVideoById,
+  deleteVideo,
+  togglePublishStatus,
+} from "../api/videoApi";
+import {
+  getVideoComments,
+  addComment,
+  updateComment,
+  deleteComment,
+} from "../api/commentApi";
 import { getChannelProfile } from "../api/userApi";
 import { toggleSubscription } from "../api/subscriptionApi";
 import { toggleVideoLike } from "../api/likeApi";
@@ -11,10 +20,11 @@ import { AuthContext } from "../context/AuthContext";
 function VideoPage() {
   const { videoId } = useParams();
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [video, setVideo] = useState(null);
   const [comments, setComments] = useState([]);
-  const [channel, setChannel] = useState(null); // { isSubscribed, subscribersCount, ... }
+  const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -22,6 +32,10 @@ function VideoPage() {
   const [isCommenting, setIsCommenting] = useState(false);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+
+  // Which comment (by id) is currently being edited, and its draft text
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
 
   const fetchComments = useCallback(async () => {
     const response = await getVideoComments(videoId);
@@ -37,7 +51,6 @@ function VideoPage() {
         const videoData = videoResponse.data.data;
         setVideo(videoData);
 
-        // Fetch the channel's subscriber info using the video owner's username
         const channelResponse = await getChannelProfile(
           videoData.owner.username,
         );
@@ -50,21 +63,45 @@ function VideoPage() {
         setLoading(false);
       }
     })();
-  }, [videoId, fetchComments]); // re-run whenever the user navigates to a different video
+  }, [videoId, fetchComments]);
 
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-
     setIsCommenting(true);
     try {
       await addComment(videoId, newComment);
       setNewComment("");
-      await fetchComments(); // refresh the list to show the new comment
+      await fetchComments();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to add comment");
     } finally {
       setIsCommenting(false);
+    }
+  };
+
+  const startEditingComment = (comment) => {
+    setEditingCommentId(comment._id);
+    setEditCommentContent(comment.content);
+  };
+
+  const handleUpdateComment = async (commentId) => {
+    try {
+      await updateComment(commentId, editCommentContent);
+      setEditingCommentId(null);
+      await fetchComments();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update comment");
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("Delete this comment?")) return;
+    try {
+      await deleteComment(commentId);
+      await fetchComments();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete comment");
     }
   };
 
@@ -73,13 +110,9 @@ function VideoPage() {
       toast.error("Please log in to subscribe.");
       return;
     }
-
     setIsSubscribing(true);
     try {
       await toggleSubscription(video.owner._id);
-
-      // Functional update — depends on the previous value of "channel",
-      // so we use the (prev) => {...} form instead of reading "channel" directly.
       setChannel((prev) => ({
         ...prev,
         isSubscribed: !prev.isSubscribed,
@@ -101,13 +134,9 @@ function VideoPage() {
       toast.error("Please log in to like this video.");
       return;
     }
-
     setIsLiking(true);
     try {
       await toggleVideoLike(video._id);
-
-      // Functional update — flips isLiked and adjusts the count based on the
-      // previous value, same pattern as handleToggleSubscribe above.
       setVideo((prev) => ({
         ...prev,
         isLiked: !prev.isLiked,
@@ -117,6 +146,27 @@ function VideoPage() {
       toast.error(err.response?.data?.message || "Failed to update like");
     } finally {
       setIsLiking(false);
+    }
+  };
+
+  const handleTogglePublish = async () => {
+    try {
+      await togglePublishStatus(video._id);
+      setVideo((prev) => ({ ...prev, isPublished: !prev.isPublished }));
+      toast.success("Publish status updated");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  const handleDeleteVideo = async () => {
+    if (!window.confirm("Delete this video permanently?")) return;
+    try {
+      await deleteVideo(video._id);
+      toast.success("Video deleted");
+      navigate("/");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete video");
     }
   };
 
@@ -136,7 +186,6 @@ function VideoPage() {
     );
   }
 
-  // Don't show the subscribe button on your own video
   const isOwnVideo = user && user._id === video.owner._id;
 
   return (
@@ -148,6 +197,34 @@ function VideoPage() {
 
       {/* Title */}
       <h1 className="text-xl font-bold text-neutral-900 mb-2">{video.title}</h1>
+
+      {/* Owner-only controls */}
+      {isOwnVideo && (
+        <div className="flex items-center gap-2 mb-4">
+          <Link
+            to={`/videos/${video._id}/edit`}
+            className="text-xs font-medium px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition"
+          >
+            Edit
+          </Link>
+          <button
+            onClick={handleTogglePublish}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full transition ${
+              video.isPublished
+                ? "bg-green-50 text-green-700 hover:bg-green-100"
+                : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+            }`}
+          >
+            {video.isPublished ? "Published" : "Unpublished"}
+          </button>
+          <button
+            onClick={handleDeleteVideo}
+            className="text-xs font-medium px-3 py-1.5 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
+          >
+            Delete
+          </button>
+        </div>
+      )}
 
       {/* Like button */}
       <button
@@ -186,7 +263,7 @@ function VideoPage() {
         </span>
       </button>
 
-      {/* Owner + subscribe button + views */}
+      {/* Owner + subscribe button */}
       <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-neutral-200">
         <Link
           to={`/c/${video.owner?.username}`}
@@ -224,12 +301,10 @@ function VideoPage() {
       </div>
 
       {/* Description */}
-      <p className="text-sm text-neutral-700 whitespace-pre-line mb-8">
+      <p className="text-sm text-neutral-700 whitespace-pre-line mb-2">
         {video.description}
       </p>
-
-      {/* Views (moved here to keep the owner row focused on identity + subscribe) */}
-      <p className="text-xs text-neutral-500 -mt-6 mb-8">{video.views} views</p>
+      <p className="text-xs text-neutral-500 mb-8">{video.views} views</p>
 
       {/* Comments section */}
       <div>
@@ -284,21 +359,72 @@ function VideoPage() {
               No comments yet. Be the first to comment!
             </p>
           ) : (
-            comments.map((comment) => (
-              <div key={comment._id} className="flex gap-3">
-                <img
-                  src={comment.owner?.avatar?.url}
-                  alt={comment.owner?.username}
-                  className="w-9 h-9 rounded-full object-cover shrink-0"
-                />
-                <div>
-                  <p className="text-sm font-semibold text-neutral-900">
-                    {comment.owner?.username}
-                  </p>
-                  <p className="text-sm text-neutral-700">{comment.content}</p>
+            comments.map((comment) => {
+              const isOwnComment = user && user._id === comment.owner?._id;
+              return (
+                <div key={comment._id} className="flex gap-3">
+                  <img
+                    src={comment.owner?.avatar?.url}
+                    alt={comment.owner?.username}
+                    className="w-9 h-9 rounded-full object-cover shrink-0"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-neutral-900">
+                      {comment.owner?.username}
+                    </p>
+
+                    {editingCommentId === comment._id ? (
+                      <div className="mt-1">
+                        <input
+                          type="text"
+                          value={editCommentContent}
+                          onChange={(e) =>
+                            setEditCommentContent(e.target.value)
+                          }
+                          className="w-full border-b border-neutral-300 focus:border-red-500 outline-none text-sm py-1"
+                        />
+                        <div className="flex gap-2 mt-1">
+                          <button
+                            onClick={() => handleUpdateComment(comment._id)}
+                            className="text-xs font-medium text-red-600"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingCommentId(null)}
+                            className="text-xs font-medium text-neutral-500"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-neutral-700">
+                          {comment.content}
+                        </p>
+                        {isOwnComment && (
+                          <div className="flex gap-3 mt-1">
+                            <button
+                              onClick={() => startEditingComment(comment)}
+                              className="text-xs font-medium text-neutral-400 hover:text-red-600"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteComment(comment._id)}
+                              className="text-xs font-medium text-neutral-400 hover:text-red-600"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

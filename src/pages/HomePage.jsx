@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAllVideos } from "../api/VideoApi";
+import { getAllVideos } from "../api/videoApi";
 import VideoCard from "../components/VideoCard";
 
 function SkeletonCard() {
@@ -20,7 +20,10 @@ function SkeletonCard() {
 
 function HomePage() {
   const [videos, setVideos] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -28,6 +31,8 @@ function HomePage() {
       try {
         const response = await getAllVideos({ page: 1, limit: 12 });
         setVideos(response.data.data.docs);
+        setHasNextPage(response.data.data.hasNextPage);
+        setPage(1);
       } catch {
         setError("Failed to load videos. Please try again.");
       } finally {
@@ -35,6 +40,22 @@ function HomePage() {
       }
     })();
   }, []);
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const response = await getAllVideos({ page: nextPage, limit: 12 });
+      // Append the new page's videos to the existing list rather than replacing it
+      setVideos((prev) => [...prev, ...response.data.data.docs]);
+      setHasNextPage(response.data.data.hasNextPage);
+      setPage(nextPage);
+    } catch {
+      // Silent fail is acceptable here — the user can just try the button again
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -73,6 +94,18 @@ function HomePage() {
           <VideoCard key={video._id} video={video} />
         ))}
       </div>
+
+      {hasNextPage && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="text-sm font-medium bg-white border border-neutral-300 text-neutral-700 px-6 py-2.5 rounded-full hover:bg-neutral-50 disabled:opacity-50 transition"
+          >
+            {loadingMore ? "Loading..." : "Load More"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
