@@ -70,7 +70,7 @@ function PlaylistsPage() {
         <h1 className="text-2xl font-bold text-neutral-900">Your Playlists</h1>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="text-sm font-medium bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+          className="text-sm font-medium cursor-pointer bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
         >
           {showForm ? "Cancel" : "New Playlist"}
         </button>
@@ -100,7 +100,7 @@ function PlaylistsPage() {
           <button
             type="submit"
             disabled={creating}
-            className="text-sm font-medium bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+            className="text-sm font-medium cursor-pointer bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
           >
             {creating ? "Creating..." : "Create"}
           </button>

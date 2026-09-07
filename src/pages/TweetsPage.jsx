@@ -106,7 +106,7 @@ function TweetsPage() {
         <button
           type="submit"
           disabled={posting || !content.trim()}
-          className="text-sm font-medium bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+          className="text-sm font-medium bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 enabled:cursor-pointer"
         >
           {posting ? "Posting..." : "Post"}
         </button>
@@ -132,13 +132,13 @@ function TweetsPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleUpdate(tweet._id)}
-                      className="text-xs font-medium bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700"
+                      className="text-xs cursor-pointer font-medium bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700"
                     >
                       Save
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
-                      className="text-xs font-medium bg-neutral-100 text-neutral-700 px-3 py-1.5 rounded-lg hover:bg-neutral-200"
+                      className="text-xs cursor-pointer font-medium bg-neutral-100 text-neutral-700 px-3 py-1.5 rounded-lg hover:bg-neutral-200"
                     >
                       Cancel
                     </button>
@@ -150,13 +150,13 @@ function TweetsPage() {
                   <div className="flex gap-3 mt-2">
                     <button
                       onClick={() => startEditing(tweet)}
-                      className="text-xs font-medium text-neutral-500 hover:text-red-600"
+                      className="text-xs cursor-pointer font-medium text-neutral-500 hover:text-red-600"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(tweet._id)}
-                      className="text-xs font-medium text-neutral-500 hover:text-red-600"
+                      className="text-xs font-medium cursor-pointer text-neutral-500 hover:text-red-600"
                     >
                       Delete
                     </button>

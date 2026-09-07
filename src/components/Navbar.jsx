@@ -124,7 +124,7 @@ function Navbar() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center gap-2 bg-neutral-50 pl-1 pr-3 py-1 rounded-full border border-neutral-200 hover:bg-neutral-100 transition"
+                    className="flex items-center cursor-pointer gap-2 bg-neutral-50 pl-1 pr-3 py-1 rounded-full border border-neutral-200 hover:bg-neutral-100 transition"
                   >
                     <img
                       src={user.avatar?.url}

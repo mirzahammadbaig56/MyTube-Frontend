@@ -156,7 +156,7 @@ function EditProfilePage() {
         <button
           type="submit"
           disabled={savingDetails}
-          className="bg-red-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+          className="bg-red-600 cursor-pointer text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
         >
           {savingDetails ? "Saving..." : "Save Details"}
         </button>
@@ -184,7 +184,7 @@ function EditProfilePage() {
         <button
           type="submit"
           disabled={savingAvatar || !avatarFile}
-          className="bg-red-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+          className="bg-red-600 enabled:cursor-pointer text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
         >
           {savingAvatar ? "Uploading..." : "Update Avatar"}
         </button>
@@ -207,7 +207,7 @@ function EditProfilePage() {
         <button
           type="submit"
           disabled={savingCover || !coverFile}
-          className="block bg-red-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+          className="block enabled:cursor-pointer bg-red-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
         >
           {savingCover ? "Uploading..." : "Update Cover"}
         </button>
@@ -247,7 +247,7 @@ function EditProfilePage() {
         <button
           type="submit"
           disabled={savingPassword}
-          className="bg-red-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+          className="bg-red-600 cursor-pointer text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
         >
           {savingPassword ? "Saving..." : "Change Password"}
         </button>
