@@ -22,6 +22,20 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Debounced live-search: wait 500ms after the user stops typing before
+  // navigating to the search results page. Every keystroke resets the timer
+  // (via the cleanup function below) — the navigation only fires once the
+  // user actually pauses, instead of on every single keystroke.
+  useEffect(() => {
+    if (!searchTerm.trim()) return;
+
+    const timer = setTimeout(() => {
+      navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, navigate]);
+
   const handleLogout = async () => {
     await logout();
     setMenuOpen(false);
@@ -124,7 +138,7 @@ function Navbar() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center cursor-pointer gap-2 bg-neutral-50 pl-1 pr-3 py-1 rounded-full border border-neutral-200 hover:bg-neutral-100 transition"
+                    className="flex items-center gap-2 bg-neutral-50 pl-1 pr-3 py-1 rounded-full border border-neutral-200 hover:bg-neutral-100 transition"
                   >
                     <img
                       src={user.avatar?.url}
