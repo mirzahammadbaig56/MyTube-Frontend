@@ -153,7 +153,7 @@ function UploadPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-red-600 text-white font-medium py-2.5 rounded-lg hover:bg-red-700 active:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="w-full cursor-pointer bg-red-600 text-white font-medium py-2.5 rounded-lg hover:bg-red-700 active:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {isSubmitting ? "Uploading..." : "Publish Video"}
         </button>

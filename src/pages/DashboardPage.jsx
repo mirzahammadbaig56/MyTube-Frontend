@@ -133,7 +133,7 @@ function DashboardPage() {
                 </div>
                 <button
                   onClick={() => handleTogglePublish(video._id)}
-                  className={`text-xs font-medium px-3 py-1.5 rounded-full transition ${
+                  className={`text-xs cursor-pointer font-medium px-3 py-1.5 rounded-full transition ${
                     video.isPublished
                       ? "bg-green-50 text-green-700 hover:bg-green-100"
                       : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
@@ -149,7 +149,7 @@ function DashboardPage() {
                 </Link>
                 <button
                   onClick={() => handleDelete(video._id)}
-                  className="text-xs font-medium px-3 py-1.5 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
+                  className="text-xs cursor-pointer font-medium px-3 py-1.5 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
                 >
                   Delete
                 </button>

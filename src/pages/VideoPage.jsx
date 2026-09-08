@@ -209,7 +209,7 @@ function VideoPage() {
           </Link>
           <button
             onClick={handleTogglePublish}
-            className={`text-xs font-medium px-3 py-1.5 rounded-full transition ${
+            className={`text-xs font-medium cursor-pointer px-3 py-1.5 rounded-full transition ${
               video.isPublished
                 ? "bg-green-50 text-green-700 hover:bg-green-100"
                 : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
@@ -219,7 +219,7 @@ function VideoPage() {
           </button>
           <button
             onClick={handleDeleteVideo}
-            className="text-xs font-medium px-3 py-1.5 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
+            className="text-xs cursor-pointer font-medium px-3 py-1.5 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
           >
             Delete
           </button>
@@ -230,7 +230,7 @@ function VideoPage() {
       <button
         onClick={handleToggleLike}
         disabled={isLiking}
-        className={`group flex items-center gap-2.5 pl-2.5 pr-4 py-2 rounded-full mb-4 transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:active:scale-100 ${
+        className={`group flex cursor-pointer items-center gap-2.5 pl-2.5 pr-4 py-2 rounded-full mb-4 transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:active:scale-100 ${
           video.isLiked
             ? "bg-red-600 text-white shadow-md shadow-red-200"
             : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
@@ -289,7 +289,7 @@ function VideoPage() {
           <button
             onClick={handleToggleSubscribe}
             disabled={isSubscribing}
-            className={`text-sm font-semibold px-5 py-2 rounded-full transition disabled:opacity-50 ${
+            className={`text-sm cursor-pointer font-semibold px-5 py-2 rounded-full transition disabled:opacity-50 ${
               channel?.isSubscribed
                 ? "bg-neutral-200 text-neutral-700 hover:bg-neutral-300"
                 : "bg-red-600 text-white hover:bg-red-700"

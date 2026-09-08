@@ -1,10 +1,11 @@
 import { useContext, useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [menuOpen, setMenuOpen] = useState(false); // mobile hamburger menu
   const [dropdownOpen, setDropdownOpen] = useState(false); // user avatar dropdown
@@ -21,6 +22,17 @@ function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // If the user clears the search box WHILE they're on the search results
+  // page, send them back home instead of leaving them stuck looking at
+  // stale results with nothing to search for. Kept as its own effect (rather
+  // than folded into the debounce effect below) so that it only reacts to
+  // the search term actually becoming empty — not to every route change.
+  useEffect(() => {
+    if (!searchTerm.trim() && location.pathname === "/search") {
+      navigate("/");
+    }
+  }, [searchTerm, location.pathname, navigate]);
 
   // Debounced live-search: wait 500ms after the user stops typing before
   // navigating to the search results page. Every keystroke resets the timer
@@ -138,7 +150,7 @@ function Navbar() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center gap-2 bg-neutral-50 pl-1 pr-3 py-1 rounded-full border border-neutral-200 hover:bg-neutral-100 transition"
+                    className="flex cursor-pointer items-center gap-2 bg-neutral-50 pl-1 pr-3 py-1 rounded-full border border-neutral-200 hover:bg-neutral-100 transition"
                   >
                     <img
                       src={user.avatar?.url}
