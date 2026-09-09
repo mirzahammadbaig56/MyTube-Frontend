@@ -37,10 +37,27 @@ function VideoPage() {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentContent, setEditCommentContent] = useState("");
 
-  const fetchComments = useCallback(async () => {
-    const response = await getVideoComments(videoId);
-    setComments(response.data.data.docs);
-  }, [videoId]);
+  const [commentsPage, setCommentsPage] = useState(1);
+  const [hasMoreComments, setHasMoreComments] = useState(false);
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+
+  // page=1 replaces the list (initial load, or after adding/editing/deleting
+  // a comment). Any page > 1 (via "Load More") appends to the existing list.
+  const fetchComments = useCallback(
+    async (page = 1) => {
+      const response = await getVideoComments(videoId, { page, limit: 10 });
+      const { docs, hasNextPage } = response.data.data;
+
+      if (page === 1) {
+        setComments(docs);
+      } else {
+        setComments((prev) => [...prev, ...docs]);
+      }
+      setHasMoreComments(hasNextPage);
+      setCommentsPage(page);
+    },
+    [videoId],
+  );
 
   useEffect(() => {
     (async () => {
@@ -102,6 +119,17 @@ function VideoPage() {
       await fetchComments();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete comment");
+    }
+  };
+
+  const handleLoadMoreComments = async () => {
+    setLoadingMoreComments(true);
+    try {
+      await fetchComments(commentsPage + 1);
+    } catch {
+      toast.error("Failed to load more comments");
+    } finally {
+      setLoadingMoreComments(false);
     }
   };
 
@@ -209,7 +237,7 @@ function VideoPage() {
           </Link>
           <button
             onClick={handleTogglePublish}
-            className={`text-xs font-medium cursor-pointer px-3 py-1.5 rounded-full transition ${
+            className={`text-xs font-medium px-3 py-1.5 rounded-full transition ${
               video.isPublished
                 ? "bg-green-50 text-green-700 hover:bg-green-100"
                 : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
@@ -219,7 +247,7 @@ function VideoPage() {
           </button>
           <button
             onClick={handleDeleteVideo}
-            className="text-xs cursor-pointer font-medium px-3 py-1.5 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
+            className="text-xs font-medium px-3 py-1.5 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
           >
             Delete
           </button>
@@ -289,7 +317,7 @@ function VideoPage() {
           <button
             onClick={handleToggleSubscribe}
             disabled={isSubscribing}
-            className={`text-sm cursor-pointer font-semibold px-5 py-2 rounded-full transition disabled:opacity-50 ${
+            className={`text-sm font-semibold cursor-pointer px-5 py-2 rounded-full transition disabled:opacity-50 ${
               channel?.isSubscribed
                 ? "bg-neutral-200 text-neutral-700 hover:bg-neutral-300"
                 : "bg-red-600 text-white hover:bg-red-700"
@@ -427,6 +455,18 @@ function VideoPage() {
             })
           )}
         </div>
+
+        {hasMoreComments && (
+          <div className="flex justify-center mt-5">
+            <button
+              onClick={handleLoadMoreComments}
+              disabled={loadingMoreComments}
+              className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+            >
+              {loadingMoreComments ? "Loading..." : "Load more comments"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
