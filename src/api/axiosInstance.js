@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api/v1", // keep this matching your backend URL
+  baseURL: "http://localhost:4000/api/v1", // keep this matching your backend URL
   withCredentials: true,
 });
 
@@ -16,12 +16,17 @@ axiosInstance.interceptors.response.use(
     const isLoginOrRegister =
       originalRequest?.url?.includes("/users/login") ||
       originalRequest?.url?.includes("/users/register");
+      
+    const isCurrentUserCheck = originalRequest?.url?.includes(
+      "/users/current-user",
+    );
 
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !isRefreshCall &&
-      !isLoginOrRegister
+      !isLoginOrRegister &&
+      !isCurrentUserCheck
     ) {
       originalRequest._retry = true; // prevent an infinite retry loop
       try {

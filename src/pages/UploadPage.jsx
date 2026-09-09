@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB — matches Cloudinary's free-tier limit
+
 function UploadPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -15,12 +17,33 @@ function UploadPage() {
 
   const navigate = useNavigate();
 
+  const handleVideoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > MAX_VIDEO_SIZE) {
+      toast.error(
+        `Video is ${(file.size / (1024 * 1024)).toFixed(1)}MB — the limit is 100MB. Please compress it first.`,
+      );
+      e.target.value = ""; 
+      setVideoFile(null);
+      return;
+    }
+
+    setVideoFile(file);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors([]);
 
     if (!videoFile || !thumbnail) {
       setErrors(["Both a video file and a thumbnail are required."]);
+      return;
+    }
+
+    if (videoFile.size > MAX_VIDEO_SIZE) {
+      setErrors(["Video file is too large. Maximum allowed size is 100MB."]);
       return;
     }
 
@@ -46,7 +69,7 @@ function UploadPage() {
 
       const newVideoId = response.data.data._id;
       toast.success("Video uploaded successfully!");
-      navigate(`/videos/${newVideoId}`); // straight to the freshly uploaded video
+      navigate(`/videos/${newVideoId}`);
     } catch (err) {
       const backendErrors = err.response?.data?.errors;
       const backendMessage = err.response?.data?.message;
@@ -109,15 +132,22 @@ function UploadPage() {
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Video File
+            Video File{" "}
+            <span className="text-neutral-400 font-normal">(max 100MB)</span>
           </label>
           <input
             type="file"
             accept="video/*"
-            onChange={(e) => setVideoFile(e.target.files[0])}
+            onChange={handleVideoChange}
             required
             className="w-full text-sm text-neutral-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-red-50 file:text-red-600 file:font-medium hover:file:bg-red-100"
           />
+          {videoFile && (
+            <p className="text-xs text-neutral-500 mt-1">
+              Selected: {videoFile.name} (
+              {(videoFile.size / (1024 * 1024)).toFixed(1)}MB)
+            </p>
+          )}
         </div>
 
         <div className="mb-6">
@@ -133,7 +163,6 @@ function UploadPage() {
           />
         </div>
 
-        {/* Upload progress bar — only shown while actively submitting */}
         {isSubmitting && (
           <div className="mb-6">
             <div className="w-full bg-neutral-200 rounded-full h-2.5 overflow-hidden">
