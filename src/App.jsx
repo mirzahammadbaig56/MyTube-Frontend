@@ -1,7 +1,9 @@
+import { useContext } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthContext } from "./context/AuthContext";
 
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -21,6 +23,16 @@ import TweetsPage from "./pages/TweetsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
+  const { loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-neutral-400 text-sm">Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <Navbar />
