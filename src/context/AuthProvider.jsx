@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { loginUser, logoutUser, getCurrentUser } from "../api/authApi";
-import axiosInstance from "../api/axiosInstance";
-import { AuthContext } from "../context/AuthContext"
+import { AuthContext } from "./AuthContext";
 
 
 export const AuthProvider = ({ children }) => {
@@ -22,12 +21,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     (async () => {
-      try {
-        await axiosInstance.post("/users/refresh-token");
-      } catch {
-        // No valid refresh token either — genuinely logged out, that's fine.
-      }
-
       try {
         const response = await getCurrentUser();
         setUser(response.data.data);
