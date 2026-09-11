@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getVideoById, updateVideo } from "../api/videoApi";
+import { getVideoById, updateVideo } from "../api/VideoApi";
 
 function EditVideoPage() {
   const { videoId } = useParams();
