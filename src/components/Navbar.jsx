@@ -1,7 +1,7 @@
 import { useContext, useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { getAllVideos } from "../api/videoApi";
+import { getAllVideos } from "../api/VideoApi";
 
 function Navbar() {
   const { user, logout } = useContext(AuthContext);
