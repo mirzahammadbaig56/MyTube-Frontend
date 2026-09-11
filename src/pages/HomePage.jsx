@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAllVideos } from "../api/videoApi";
+import { getAllVideos } from "../api/VideoApi";
 import VideoCard from "../components/VideoCard";
 
 function SkeletonCard() {

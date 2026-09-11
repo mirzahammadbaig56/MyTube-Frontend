@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getChannelStats, getChannelVideos } from "../api/dashboardApi";
-import { deleteVideo, togglePublishStatus } from "../api/videoApi";
+import { deleteVideo, togglePublishStatus } from "../api/VideoApi";
 
 function StatCard({ label, value }) {
   return (

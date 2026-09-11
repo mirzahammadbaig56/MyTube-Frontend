@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getAllVideos } from "../api/videoApi";
+import { getAllVideos } from "../api/VideoApi";
 import VideoCard from "../components/VideoCard";
 
 function SearchResultsPage() {

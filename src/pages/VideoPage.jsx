@@ -5,7 +5,7 @@ import {
   getVideoById,
   deleteVideo,
   togglePublishStatus,
-} from "../api/videoApi";
+} from "../api/VideoApi";
 import {
   getVideoComments,
   addComment,
