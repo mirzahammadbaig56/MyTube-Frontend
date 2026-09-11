@@ -1,6 +1,7 @@
 import { useContext, useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { getAllVideos } from "../api/videoApi";
 
 function Navbar() {
   const { user, logout } = useContext(AuthContext);
@@ -10,13 +11,19 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false); // mobile hamburger menu
   const [dropdownOpen, setDropdownOpen] = useState(false); // user avatar dropdown
   const [searchTerm, setSearchTerm] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const dropdownRef = useRef(null);
+  const searchRef = useRef(null);
 
-  // Close the dropdown when clicking anywhere outside of it
+  // Close the user dropdown AND the search suggestions when clicking outside either
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSuggestions(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -25,28 +32,41 @@ function Navbar() {
 
   // If the user clears the search box WHILE they're on the search results
   // page, send them back home instead of leaving them stuck looking at
-  // stale results with nothing to search for. Kept as its own effect (rather
-  // than folded into the debounce effect below) so that it only reacts to
-  // the search term actually becoming empty — not to every route change.
+  // stale results with nothing to search for.
   useEffect(() => {
     if (!searchTerm.trim() && location.pathname === "/search") {
       navigate("/");
     }
   }, [searchTerm, location.pathname, navigate]);
 
-  // Debounced live-search: wait 500ms after the user stops typing before
-  // navigating to the search results page. Every keystroke resets the timer
-  // (via the cleanup function below) — the navigation only fires once the
-  // user actually pauses, instead of on every single keystroke.
-  useEffect(() => {
-    if (!searchTerm.trim()) return;
+  // Debounced SUGGESTIONS (not a full search navigation): wait 400ms after
+  // the user stops typing, then fetch a handful of matching videos to show
+  // as a dropdown. Actual navigation to the full results page only happens
+  // when the user presses Enter or clicks a suggestion/the search button.
+ useEffect(() => {
+   const trimmed = searchTerm.trim();
 
-    const timer = setTimeout(() => {
-      navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
-    }, 500);
+   if (!trimmed) {
+     return;
+   }
 
-    return () => clearTimeout(timer);
-  }, [searchTerm, navigate]);
+   const timer = setTimeout(async () => {
+     try {
+       const response = await getAllVideos({
+         query: trimmed,
+         limit: 5,
+       });
+
+       setSuggestions(response.data.data.docs);
+       setShowSuggestions(true);
+     } catch {
+       setSuggestions([]);
+       setShowSuggestions(false);
+     }
+   }, 400);
+
+   return () => clearTimeout(timer);
+ }, [searchTerm]);
 
   const handleLogout = async () => {
     await logout();
@@ -59,6 +79,14 @@ function Navbar() {
     e.preventDefault();
     if (!searchTerm.trim()) return;
     navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
+    setShowSuggestions(false);
+    setMenuOpen(false);
+  };
+
+  const handleSuggestionClick = (videoId) => {
+    navigate(`/videos/${videoId}`);
+    setShowSuggestions(false);
+    setSearchTerm("");
     setMenuOpen(false);
   };
 
@@ -88,38 +116,71 @@ function Navbar() {
           </Link>
 
           {/* Search bar — hidden on mobile, visible from sm breakpoint up */}
-          <form
-            onSubmit={handleSearch}
-            className="hidden sm:flex flex-1 max-w-md"
+          <div
+            ref={searchRef}
+            className="hidden sm:block flex-1 max-w-md relative"
           >
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search videos..."
-              className="w-full border border-neutral-300 rounded-l-full px-4 py-1.5 text-sm focus:outline-none focus:border-red-500 transition"
-            />
-            <button
-              type="submit"
-              className="bg-neutral-100 border border-l-0 border-neutral-300 rounded-r-full px-4 hover:bg-neutral-200 transition"
-              aria-label="Search"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-4 h-4 text-neutral-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+            <form onSubmit={handleSearch} className="flex">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchTerm(value);
+
+                  if (!value.trim()) {
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                  }
+                }}
+                onFocus={() => searchTerm.trim() && setShowSuggestions(true)}
+                placeholder="Search videos..."
+                className="w-full border border-neutral-300 rounded-l-full px-4 py-1.5 text-sm focus:outline-none focus:border-red-500 transition"
+              />
+              <button
+                type="submit"
+                className="bg-neutral-100 border border-l-0 border-neutral-300 rounded-r-full px-4 hover:bg-neutral-200 transition"
+                aria-label="Search"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </button>
-          </form>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 text-neutral-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </button>
+            </form>
+
+            {/* Suggestions dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-neutral-200 py-2 z-50 max-h-80 overflow-y-auto">
+                {suggestions.map((video) => (
+                  <button
+                    key={video._id}
+                    onClick={() => handleSuggestionClick(video._id)}
+                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 transition text-left"
+                  >
+                    <img
+                      src={video.thumbnail?.url}
+                      alt={video.title}
+                      className="w-16 aspect-video object-cover rounded-md shrink-0"
+                    />
+                    <span className="text-sm text-neutral-800 line-clamp-2">
+                      {video.title}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-4 shrink-0">
@@ -250,7 +311,15 @@ function Navbar() {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchTerm(value);
+
+                  if (!value.trim()) {
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                  }
+                }}
                 placeholder="Search videos..."
                 className="w-full border border-neutral-300 rounded-l-full px-4 py-1.5 text-sm focus:outline-none focus:border-red-500 transition"
               />
@@ -275,6 +344,27 @@ function Navbar() {
                 </svg>
               </button>
             </form>
+
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="bg-white rounded-xl shadow-md border border-neutral-200 py-2 mb-2 max-h-72 overflow-y-auto">
+                {suggestions.map((video) => (
+                  <button
+                    key={video._id}
+                    onClick={() => handleSuggestionClick(video._id)}
+                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 transition text-left"
+                  >
+                    <img
+                      src={video.thumbnail?.url}
+                      alt={video.title}
+                      className="w-16 aspect-video object-cover rounded-md shrink-0"
+                    />
+                    <span className="text-sm text-neutral-800 line-clamp-2">
+                      {video.title}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {user ? (
               <>
